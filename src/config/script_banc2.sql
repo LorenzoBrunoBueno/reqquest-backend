@@ -7,6 +7,12 @@
 -- Revisão: corrigidos os pontos encontrados na varredura entre este script
 -- e as funcionalidades do front (ver comentários junto de cada mudança) e
 -- completado o seed de requisitos para os 6 mundos.
+--
+-- Revisão (proposta, ainda não sincronizada com quem administra o banco de
+-- produção): adicionadas colunas em `temas` para upload de imagem (ícone e
+-- fundo) direto no cadastro do mundo, em vez de só referenciar um arquivo já
+-- existente no front — ver `icone_imagem`/`fundo_imagem` na tabela `temas`.
+-- Espelha a migration `add_tema_imagem_bytes` de prisma/schema.prisma.
 -- =====================================================
 
 CREATE DATABASE IF NOT EXISTS requisitos_game;
@@ -40,11 +46,19 @@ CREATE TABLE temas (
     id VARCHAR(40) PRIMARY KEY,          -- ex: 't-restaurante' (o front usa IDs em texto, não numéricos)
     nome VARCHAR(100) NOT NULL,
     descricao VARCHAR(255),
-    icone VARCHAR(500),                  -- caminho do ícone SVG ou URL colada no CRUD (crud.js permite link externo)
-    fundo VARCHAR(500),                  -- caminho/URL da imagem de fundo
+    icone VARCHAR(500),                  -- caminho do ícone SVG padrão, OU fallback quando não há icone_imagem
+    fundo VARCHAR(500),                  -- caminho/URL de fundo padrão, OU fallback quando não há fundo_imagem
     grad_start VARCHAR(20),              -- cor inicial do gradiente (ex: '#f97316')
     grad_end VARCHAR(20),                -- cor final do gradiente
-    unlock_tier INT NOT NULL DEFAULT 1   -- cargo mínimo pra desbloquear o mundo
+    unlock_tier INT NOT NULL DEFAULT 1,  -- cargo mínimo pra desbloquear o mundo
+    -- PROPOSTA: upload de imagem no cadastro do mundo, guardado no próprio
+    -- banco (em vez de só um caminho/URL apontando pra fora). Nullable e
+    -- aditivo — mundos sem upload continuam usando icone/fundo acima; a API
+    -- decide em runtime qual dos dois servir (ver tema.controller.ts).
+    icone_imagem LONGBLOB NULL,
+    icone_imagem_tipo VARCHAR(100) NULL, -- MIME type (ex: 'image/png'), necessário pra servir o blob de volta
+    fundo_imagem LONGBLOB NULL,
+    fundo_imagem_tipo VARCHAR(100) NULL
 );
 
 -- -----------------------------------------------------
