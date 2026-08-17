@@ -1,0 +1,33 @@
+meta {
+  name: Excluir Requisito
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/requisitos/r-rest-f1
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## DELETE /requisitos/:id
+
+  Exclui um requisito. Requer `Authorization: Bearer <token>` (`requireAuth`).
+
+  ⚠️ Use um id de teste — apaga de verdade o requisito no banco de dev. Se
+  rodar contra um id do seed, rode `npm run db:seed` de novo depois (é
+  idempotente via `upsert`).
+
+  ### Resposta 204
+  Sem corpo.
+
+  ### Resposta 404
+  ```json
+  { "erro": "Requisito nao encontrado" }
+  ```
+}

@@ -1,0 +1,32 @@
+meta {
+  name: Usuario Logado (me)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/usuarios/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## GET /usuarios/me
+
+  Dados do usuário logado. Requer `Authorization: Bearer <token>`
+  (`requireAuth`).
+
+  ### Resposta 200
+  ```json
+  { "id": 1, "nome": "Maria Silva", "telefone": "11999999999", "email": "maria@example.com" }
+  ```
+
+  ### Resposta 401
+  ```json
+  { "erro": "Token ausente ou mal formatado" }
+  ```
+}

@@ -1,0 +1,34 @@
+meta {
+  name: Listar Temas
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/temas
+  body: none
+  auth: none
+}
+
+docs {
+  ## GET /temas
+
+  Lista todos os mundos/temas do jogo (ex.: "Sistema de Restaurante"). Sem
+  auth, sem query params.
+
+  ### Resposta 200
+  ```json
+  [
+    {
+      "id": "t-restaurante",
+      "nome": "Sistema de Restaurante",
+      "descricao": "Pedidos, cardápio e pagamentos",
+      "icone": "assets/icons/world-restaurante.svg",
+      "fundo": "assets/backgrounds/bg-restaurante.jpg",
+      "gradStart": "#f97316",
+      "gradEnd": "#dc2626",
+      "unlockTier": 1
+    }
+  ]
+  ```
+}

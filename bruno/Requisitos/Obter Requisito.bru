@@ -1,0 +1,27 @@
+meta {
+  name: Obter Requisito
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/requisitos/r-rest-f1
+  body: none
+  auth: none
+}
+
+docs {
+  ## GET /requisitos/:id
+
+  Busca um requisito pelo id (string, ex.: `r-rest-f1` — ver `prisma/seed.ts`).
+
+  ### Resposta 200
+  ```json
+  { "id": "r-rest-f1", "temaId": "t-restaurante", "texto": "O sistema deve permitir fazer pedidos pelo aplicativo.", "tipo": "funcional" }
+  ```
+
+  ### Resposta 404
+  ```json
+  { "erro": "Requisito nao encontrado" }
+  ```
+}

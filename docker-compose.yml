@@ -1,0 +1,49 @@
+# ATENCAO: este docker-compose e apenas para DESENVOLVIMENTO LOCAL.
+# Ele sobe um MySQL descartavel (com dados ficticios via seed) so para
+# facilitar o dia a dia do time. Em producao o banco e hospedado
+# separadamente (gerenciado pelo colega responsavel pelo banco) e a
+# aplicacao se conecta a ele apenas trocando a variavel DATABASE_URL.
+#
+# O docker-entrypoint.sh do backend roda "prisma migrate deploy" a cada
+# start (idempotente — so aplica migrations pendentes). O seed (RUN_SEED)
+# so fica habilitado aqui porque prisma/seed.ts usa upserts idempotentes;
+# nao habilite em produção.
+
+services:
+  backend:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "mysql://root:root@mysql:3306/requisitos_game"
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      PORT: 3000
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-troque-em-producao}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-30d}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      TEMA_IMAGEM_MAX_BYTES: ${TEMA_IMAGEM_MAX_BYTES:-2097152}
+      RUN_SEED: "true"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: requisitos_game
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data_dev:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  # Volume nomeado: dados ficticios de dev persistem entre restarts do container,
+  # mas nao tem nenhuma relacao com o banco de producao.
+  mysql_data_dev:

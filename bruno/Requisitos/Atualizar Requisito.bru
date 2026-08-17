@@ -1,0 +1,46 @@
+meta {
+  name: Atualizar Requisito
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/requisitos/r-rest-f1
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "texto": "O sistema deve permitir fazer pedidos pelo aplicativo ou totem."
+  }
+}
+
+docs {
+  ## PUT /requisitos/:id
+
+  Atualiza um requisito (RF07). Requer `Authorization: Bearer <token>`
+  (`requireAuth`). Body é o mesmo schema de **Criar Requisito**, mas
+  `.partial()` — envie só os campos que quer mudar (`temaId`, `texto`, `tipo`).
+
+  ### Resposta 200
+  Requisito atualizado.
+
+  ### Resposta 404
+  ```json
+  { "erro": "Requisito nao encontrado" }
+  ```
+
+  ### Resposta 400 (novo temaId inexistente)
+  ```json
+  { "erro": "temaId nao corresponde a um mundo existente" }
+  ```
+}

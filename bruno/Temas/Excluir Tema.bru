@@ -1,0 +1,33 @@
+meta {
+  name: Excluir Tema
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/temas/t-restaurante
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## DELETE /temas/:id
+
+  Exclui um tema. Requer `Authorization: Bearer <token>` (`requireAuth`).
+
+  ⚠️ Use um id de teste — este endpoint apaga de verdade o tema no banco de
+  dev. Não rode contra um id do seed (`t-restaurante`, `t-escola`, ...) a
+  menos que vá re-seedar depois (`npm run db:seed`).
+
+  ### Resposta 204
+  Sem corpo.
+
+  ### Resposta 404
+  ```json
+  { "erro": "Tema nao encontrado" }
+  ```
+}

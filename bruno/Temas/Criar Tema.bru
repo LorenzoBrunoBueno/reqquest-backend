@@ -1,0 +1,49 @@
+meta {
+  name: Criar Tema
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/temas
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nome": "Sistema de Biblioteca",
+    "descricao": "Empréstimos, acervo e multas",
+    "icone": "assets/icons/world-biblioteca.svg",
+    "fundo": "assets/backgrounds/bg-biblioteca.jpg",
+    "gradStart": "#0f766e",
+    "gradEnd": "#134e4a",
+    "unlockTier": 2
+  }
+}
+
+docs {
+  ## POST /temas
+
+  Cria um novo mundo/tema. Requer `Authorization: Bearer <token>`
+  (`requireAuth` — ver **Auth > Login**).
+
+  Somente `nome` é obrigatório; `descricao`, `icone`, `fundo`, `gradStart`,
+  `gradEnd` e `unlockTier` são opcionais.
+
+  ### Resposta 201
+  Tema criado, mesmo formato de `GET /temas/:id`.
+
+  ### Resposta 401
+  ```json
+  { "erro": "Token ausente ou mal formatado" }
+  ```
+}

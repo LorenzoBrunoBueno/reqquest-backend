@@ -1,0 +1,36 @@
+meta {
+  name: Listar Partidas
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/partidas?orderBy=score&order=desc
+  body: none
+  auth: none
+}
+
+query {
+  ~temaId: t-restaurante
+  orderBy: score
+  order: desc
+  ~limit: 20
+}
+
+docs {
+  ## GET /partidas
+
+  Ranking/histórico de partidas. Sem auth. Todos os filtros são opcionais:
+
+  - `temaId`: filtra por mundo.
+  - `orderBy`: `"score"` (default) ou `"data"`.
+  - `order`: `"asc"` ou `"desc"` (default `"desc"`).
+  - `limit`: inteiro 1–200.
+
+  ### Resposta 200
+  ```json
+  [
+    { "id": 1, "usuarioNome": "Maria Silva", "temaNome": "Sistema de Restaurante", "score": 850, "nivel": 3, "dataJogo": "..." }
+  ]
+  ```
+}

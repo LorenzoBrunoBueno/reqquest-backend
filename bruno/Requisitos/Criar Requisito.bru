@@ -1,0 +1,47 @@
+meta {
+  name: Criar Requisito
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/requisitos
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "temaId": "t-restaurante",
+    "texto": "O sistema deve suportar pedidos em múltiplos idiomas.",
+    "tipo": "nao-funcional"
+  }
+}
+
+docs {
+  ## POST /requisitos
+
+  Cria um requisito (RF06). Requer `Authorization: Bearer <token>`
+  (`requireAuth`).
+
+  Body — todos os campos obrigatórios:
+  - `temaId`: string, precisa corresponder a um tema existente.
+  - `texto`: string não vazia.
+  - `tipo`: `"funcional"` ou `"nao-funcional"` (nunca o enum Prisma).
+
+  ### Resposta 201
+  Requisito criado, mesmo formato de `GET /requisitos/:id`.
+
+  ### Resposta 400 (temaId inexistente)
+  ```json
+  { "erro": "temaId nao corresponde a um mundo existente" }
+  ```
+}

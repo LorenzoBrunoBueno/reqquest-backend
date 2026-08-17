@@ -1,0 +1,123 @@
+// Schema alinhado com backend/src/config/script_banc2.sql (documento de referencia
+// escrito junto com a colega responsavel pelo frontend). O banco de producao e
+// gerenciado por outro colega do grupo — tratar mudancas aqui como proposta a
+// alinhar com quem administra o banco antes de migrar contra producao.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Valores mapeados exatamente como a coluna ENUM do MySQL e como o frontend
+// (game.js/crud.js) compara literalmente ('funcional' / 'nao-funcional'). O
+// Prisma Client continua expondo FUNCIONAL/NAO_FUNCIONAL (consistente com o
+// mock da Gemini em requisito.service.ts); a traducao wire <-> Prisma fica
+// centralizada em requisito.service.ts.
+enum TipoRequisito {
+  FUNCIONAL     @map("funcional")
+  NAO_FUNCIONAL @map("nao-funcional")
+}
+
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  nome         String   @db.VarChar(150)
+  telefone     String   @db.VarChar(20)
+  email        String   @db.VarChar(150)
+  dataCadastro DateTime @default(now()) @map("data_cadastro")
+
+  partidas  Partida[]
+  progresso ProgressoJogador?
+  badges    BadgeDesbloqueado[]
+
+  // RF01: "mesma pessoa" = nome + telefone + email identicos (ver auth.service.ts).
+  @@unique([nome, telefone, email], name: "uq_usuarios_identidade")
+  @@index([email], name: "idx_usuarios_email")
+  @@map("usuarios")
+}
+
+model Tema {
+  id         String  @id @default(cuid())
+  nome       String  @db.VarChar(100)
+  descricao  String? @db.VarChar(255)
+  icone      String? @db.VarChar(500)
+  fundo      String? @db.VarChar(500)
+  gradStart  String? @map("grad_start") @db.VarChar(20)
+  gradEnd    String? @map("grad_end") @db.VarChar(20)
+  unlockTier Int     @default(1) @map("unlock_tier")
+
+  // PROPOSTA (ainda nao sincronizada com quem administra o banco de producao):
+  // colunas aditivas para permitir upload de imagem no cadastro do mundo, sem
+  // exigir migrar os mundos do seed. icone/fundo (VARCHAR, acima) continuam
+  // sendo o fallback quando estas colunas estao vazias — ver
+  // tema.controller.ts (serializarTema).
+  iconeImagem     Bytes?  @map("icone_imagem") @db.LongBlob
+  iconeImagemTipo String? @map("icone_imagem_tipo") @db.VarChar(100)
+  fundoImagem     Bytes?  @map("fundo_imagem") @db.LongBlob
+  fundoImagemTipo String? @map("fundo_imagem_tipo") @db.VarChar(100)
+
+  requisitos Requisito[]
+  partidas   Partida[]
+
+  @@map("temas")
+}
+
+model Requisito {
+  id     String        @id @default(cuid())
+  temaId String        @map("tema_id")
+  texto  String        @db.Text
+  tipo   TipoRequisito
+
+  tema Tema @relation(fields: [temaId], references: [id], onDelete: Cascade)
+
+  @@map("requisitos")
+}
+
+model Partida {
+  id        Int    @id @default(autoincrement())
+  usuarioId Int?   @map("usuario_id")
+  // Nome do jogador no momento da partida (denormalizado, igual tema_nome):
+  // preserva o ranking mesmo se o usuario for removido ou jogar anonimo.
+  usuarioNome String  @map("usuario_nome") @db.VarChar(150)
+  temaId      String? @map("tema_id")
+  temaNome    String  @map("tema_nome") @db.VarChar(100)
+
+  score            Int @default(0)
+  acertos          Int @default(0)
+  erros            Int @default(0)
+  nivel            Int @default(1)
+  // Necessarios para reavaliar as conquistas "Speedrunner" e "Sequencia de
+  // Fogo" a partir dos dados persistidos, sem depender so do client.
+  maiorSequencia   Int @default(0) @map("maior_sequencia")
+  respostasRapidas Int @default(0) @map("respostas_rapidas")
+
+  dataJogo DateTime @default(now()) @map("data_jogo")
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  tema    Tema?    @relation(fields: [temaId], references: [id], onDelete: SetNull)
+
+  @@map("partidas")
+}
+
+model ProgressoJogador {
+  usuarioId Int @id @map("usuario_id")
+  xp        Int @default(0)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("progresso_jogador")
+}
+
+model BadgeDesbloqueado {
+  usuarioId       Int      @map("usuario_id")
+  badgeId         String   @map("badge_id") @db.VarChar(40)
+  dataDesbloqueio DateTime @default(now()) @map("data_desbloqueio")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, badgeId])
+  @@map("badges_desbloqueados")
+}

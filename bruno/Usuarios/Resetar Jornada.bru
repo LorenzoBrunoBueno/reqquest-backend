@@ -1,0 +1,30 @@
+meta {
+  name: Resetar Jornada
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/usuarios/me/reset
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## POST /usuarios/me/reset
+
+  "Nova Jornada" (`main.js`) — apaga todas as partidas e badges do usuário
+  logado e zera o XP. Requer `Authorization: Bearer <token>` (`requireAuth`).
+  Afeta apenas o usuário do token, nunca o ranking de outros jogadores.
+
+  ⚠️ Destrutivo para o histórico do usuário logado — use um usuário de teste.
+
+  ### Resposta 200
+  ```json
+  { "xp": 0, "badges": [] }
+  ```
+}

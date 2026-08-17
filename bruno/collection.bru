@@ -1,0 +1,38 @@
+docs {
+  # ReqQuest API — backend
+
+  Collection Bruno para o backend Node/TypeScript/Express/Prisma do projeto
+  "Full Stack" (ver `backend/CLAUDE.md`). Documenta as rotas reais definidas em
+  `src/routes/*.ts` — sem prefixo de path (ex.: `/temas`, não `/api/temas`).
+
+  ## Como usar
+
+  1. Selecione o ambiente **Local** (canto superior direito do Bruno).
+  2. Rode `docker compose up -d`, `npm run db:migrate` e `npm run db:seed` no
+     `backend/` antes de disparar as requisições (senão os temas/requisitos
+     de exemplo não vão existir).
+  3. Rode `npm run dev` (porta padrão `3000`, configurável via `PORT` no `.env`).
+  4. Dispare **Auth > Login**. O script de pós-resposta guarda o token retornado
+     na variável de runtime `token`, usada automaticamente pelas requisições que
+     exigem `Authorization: Bearer`.
+
+  ## Autenticação (RF01)
+
+  Login é sem senha — `POST /auth/login` identifica o usuário pela tripla
+  exata `(nome, telefone, email)`, criando um novo registro se for a primeira
+  vez. O JWT retornado só confirma essa identidade, não substitui senha.
+
+  - `requireAuth`: rotas de escrita de temas/requisitos e todo `/usuarios/me/*`
+    exigem `Authorization: Bearer <token>` válido (401 se ausente/mal formado/expirado).
+  - `optionalAuth`: `POST /partidas` aceita jogo anônimo (sem header) ou logado
+    (com header válido) — mas nunca mascara um token inválido como "anônimo".
+  - Não há RBAC: qualquer usuário autenticado pode alterar qualquer tema/requisito.
+
+  ## Contrato de wire (cuidado com traduções)
+
+  - `Requisito.tipo` viaja como `"funcional"` / `"nao-funcional"` (minúsculo,
+    hífen) — o mesmo literal que o frontend (`game.js`/`crud.js`) compara. O
+    enum Prisma (`FUNCIONAL`/`NAO_FUNCIONAL`) nunca deve aparecer na API.
+  - `POST /requisitos/gerar` ainda é **mock** (`gerarRequisitosMock`) — a
+    integração real com a Gemini API não foi implementada.
+}

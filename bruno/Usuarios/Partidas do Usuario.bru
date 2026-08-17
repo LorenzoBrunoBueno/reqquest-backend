@@ -1,0 +1,35 @@
+meta {
+  name: Partidas do Usuario
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/usuarios/me/partidas?order=asc
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+query {
+  ~temaId: t-restaurante
+  order: asc
+}
+
+docs {
+  ## GET /usuarios/me/partidas
+
+  Histórico de partidas do usuário logado. Requer
+  `Authorization: Bearer <token>` (`requireAuth`).
+
+  - `temaId` (opcional): filtra por mundo.
+  - `order` (opcional, default `"asc"`): `"asc"` ou `"desc"` — ordem
+    cronológica, usada pela `RelatoriosView` (gráfico de evolução) e pela
+    `DashboardView` (contagem).
+
+  ### Resposta 200
+  Lista de partidas do usuário, mesmo formato de `GET /partidas`.
+}

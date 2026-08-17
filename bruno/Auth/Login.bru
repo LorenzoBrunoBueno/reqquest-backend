@@ -1,0 +1,65 @@
+meta {
+  name: Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nome": "Maria Silva",
+    "telefone": "11999999999",
+    "email": "maria@example.com"
+  }
+}
+
+vars:pre-request {
+  baseUrl: http://localhost:3000
+}
+
+script:post-response {
+  if (res.body && res.body.token) {
+    bru.setVar("token", res.body.token);
+  }
+}
+
+docs {
+  ## POST /auth/login
+  
+  Login sem senha (RF01) — encontra ou cria um `Usuario` pela tripla exata
+  `(nome, telefone, email)` e devolve um JWT que só confirma essa identidade.
+  Não valida senha nenhuma.
+  
+  Todos os três campos são obrigatórios (`email` precisa ser um e-mail válido).
+  
+  O script de pós-resposta salva `res.body.token` na variável de runtime
+  `token`, usada automaticamente pelo header `Authorization: Bearer {{token}}`
+  nas outras requisições que exigem login.
+  
+  ### Resposta 200
+  ```json
+  {
+    "token": "<jwt>",
+    "usuario": {
+      "id": 1,
+      "nome": "Maria Silva",
+      "telefone": "11999999999",
+      "email": "maria@example.com"
+    }
+  }
+  ```
+  
+  ### Resposta 400 (corpo inválido)
+  ```json
+  { "erro": "Corpo da requisicao invalido", "detalhes": { "email": ["email invalido"] } }
+  ```
+}

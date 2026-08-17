@@ -1,0 +1,26 @@
+meta {
+  name: Obter Tema
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/temas/t-restaurante
+  body: none
+  auth: none
+}
+
+docs {
+  ## GET /temas/:id
+
+  Busca um tema pelo id (string, ex.: `t-restaurante` — ver
+  `prisma/seed.ts`/`config/script_banc2.sql`).
+
+  ### Resposta 200
+  Mesmo formato de um item de `GET /temas`.
+
+  ### Resposta 404
+  ```json
+  { "erro": "Tema nao encontrado" }
+  ```
+}

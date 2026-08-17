@@ -1,0 +1,57 @@
+meta {
+  name: Registrar Partida
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/partidas
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "temaId": "t-restaurante",
+    "score": 850,
+    "acertos": 14,
+    "erros": 2,
+    "nivel": 3,
+    "maiorSequencia": 8,
+    "respostasRapidas": 5,
+    "deckCompleto": true
+  }
+}
+
+docs {
+  ## POST /partidas
+
+  Registra o resultado de uma partida (espelha `GameView.endGame` ->
+  `DB.addPartida` no frontend). Usa `optionalAuth`: funciona sem
+  `Authorization` (jogo anônimo, `usuarioNome: "Anônimo"`, sem XP/badges) ou
+  com `Authorization: Bearer <token>` válido (concede XP e avalia badges).
+
+  Para testar como usuário logado, adicione manualmente o header
+  `Authorization: Bearer {{token}}` nesta requisição (não está pré-configurado
+  porque o modo anônimo também é um caminho válido e comum).
+
+  Body:
+  - `temaId` (obrigatório): precisa corresponder a um tema existente.
+  - `score`, `acertos`, `erros`, `nivel` (obrigatórios): inteiros ≥ 0 (`nivel` ≥ 1).
+  - `maiorSequencia`, `respostasRapidas` (opcionais, default 0): usados só
+    para avaliar badges no servidor.
+  - `deckCompleto` (opcional, default false): concede bônus de XP.
+
+  ### Resposta 201
+  Partida criada (formato depende de `partida.service.ts` — inclui XP/badges
+  se logado).
+
+  ### Resposta 400 (temaId inexistente)
+  ```json
+  { "erro": "temaId nao corresponde a um mundo existente" }
+  ```
+}

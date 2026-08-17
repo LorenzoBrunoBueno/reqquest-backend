@@ -1,0 +1,37 @@
+meta {
+  name: Listar Requisitos
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/requisitos?temaId=t-restaurante
+  body: none
+  auth: none
+}
+
+query {
+  temaId: t-restaurante
+  ~tipo: funcional
+  ~texto: cardápio
+}
+
+docs {
+  ## GET /requisitos
+
+  Lista requisitos (RF06/RF07). Sem auth. Todos os filtros são opcionais e
+  combináveis:
+
+  - `temaId`: string, filtra pelo mundo.
+  - `tipo`: `"funcional"` ou `"nao-funcional"` (formato de wire, nunca o enum
+    Prisma).
+  - `texto`: busca por substring em `texto` (case depende do collation do
+    MySQL).
+
+  ### Resposta 200
+  ```json
+  [
+    { "id": "r-rest-f1", "temaId": "t-restaurante", "texto": "O sistema deve permitir fazer pedidos pelo aplicativo.", "tipo": "funcional" }
+  ]
+  ```
+}

@@ -1,0 +1,29 @@
+meta {
+  name: Progresso
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/usuarios/me/progresso
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  ## GET /usuarios/me/progresso
+
+  XP e badges desbloqueadas do usuário logado. Requer
+  `Authorization: Bearer <token>` (`requireAuth`). Equivale a
+  `DB.getPlayerProgress()` no frontend — ranks/tiers/XP-por-nível continuam
+  sendo calculados só no frontend a partir do `xp` bruto.
+
+  ### Resposta 200
+  ```json
+  { "xp": 1240, "badges": ["primeira-vitoria", "sequencia-10"] }
+  ```
+}

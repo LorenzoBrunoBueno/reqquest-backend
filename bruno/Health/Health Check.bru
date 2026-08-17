@@ -1,0 +1,22 @@
+meta {
+  name: Health Check
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/health
+  body: none
+  auth: none
+}
+
+docs {
+  ## GET /health
+
+  Checagem rápida de que o servidor está de pé. Sem body, sem auth.
+
+  ### Resposta 200
+  ```json
+  { "status": "ok" }
+  ```
+}

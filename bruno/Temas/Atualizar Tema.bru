@@ -1,0 +1,41 @@
+meta {
+  name: Atualizar Tema
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/temas/t-restaurante
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "descricao": "Pedidos, cardápio, pagamentos e delivery"
+  }
+}
+
+docs {
+  ## PUT /temas/:id
+
+  Atualiza um tema existente. Requer `Authorization: Bearer <token>`
+  (`requireAuth`). Todos os campos do body são opcionais — mesmo schema de
+  **Criar Tema**, só que `.partial()` (envie só o que quer mudar).
+
+  ### Resposta 200
+  Tema atualizado.
+
+  ### Resposta 404
+  ```json
+  { "erro": "Tema nao encontrado" }
+  ```
+}

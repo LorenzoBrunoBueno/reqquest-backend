@@ -1,0 +1,48 @@
+meta {
+  name: Gerar Requisitos (mock)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/requisitos/gerar
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "tema": "Sistema de Restaurante",
+    "quantidade": 3
+  }
+}
+
+docs {
+  ## POST /requisitos/gerar
+
+  ⚠️ **Ainda é mock.** Retorna `gerarRequisitosMock` — a chamada real à
+  Gemini API não foi implementada (ver `backend/CLAUDE.md`). Não confundir
+  com o CRUD real de requisitos abaixo.
+
+  `tema`: string, mínimo 3 caracteres, obrigatório.
+  `quantidade`: inteiro 1–10, default 1.
+
+  ### Resposta 200
+  ```json
+  {
+    "mock": true,
+    "requisitos": [
+      { "tema": "Sistema de Restaurante", "descricao": "...", "tipo": "FUNCIONAL" }
+    ]
+  }
+  ```
+
+  Note que `tipo` aqui vem no enum interno (`FUNCIONAL`/`NAO_FUNCIONAL`), não
+  no formato de wire (`funcional`/`nao-funcional`) usado pelo CRUD real — é
+  o formato validado contra `respostaGeminiSchema` antes de (futuramente)
+  entrar no banco.
+}
