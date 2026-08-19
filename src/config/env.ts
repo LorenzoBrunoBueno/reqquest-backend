@@ -8,8 +8,6 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL e obrigatoria"),
   GEMINI_API_KEY: z.string().optional().default(""),
   PORT: z.coerce.number().int().positive().default(3000),
-  // Login e sem senha (RF01) — o JWT so confirma a identidade encontrada/criada
-  // em POST /auth/login, nao substitui autenticacao por senha.
   JWT_SECRET: z.string().min(10, "JWT_SECRET e obrigatoria (minimo 10 caracteres)"),
   JWT_EXPIRES_IN: z.string().default("30d"),
   // Origem(ns) do frontend liberadas no CORS. Aceita uma lista separada por
@@ -18,6 +16,9 @@ const envSchema = z.object({
   // Tamanho maximo (em bytes) aceito por imagem enviada no cadastro de mundo
   // (icone/fundo). Padrao 2MB — ver middlewares/upload.middleware.ts.
   TEMA_IMAGEM_MAX_BYTES: z.coerce.number().int().positive().default(2 * 1024 * 1024),
+  // Custo do hash bcrypt da senha (auth.service.ts). Padrao 10 — suficiente
+  // pra um projeto de faculdade sem exigir hardware forte em dev.
+  BCRYPT_SALT_ROUNDS: z.coerce.number().int().positive().default(10),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

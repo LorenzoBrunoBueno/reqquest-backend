@@ -11,13 +11,13 @@ describe("recurso /usuarios/me", () => {
   let temaId: string;
 
   beforeAll(async () => {
-    const loginA = await request(app).post("/auth/login").send(usuarioUnico());
-    tokenA = loginA.body.token;
-    usuarioIdA = loginA.body.usuario.id;
+    const registroA = await request(app).post("/auth/registrar").send(usuarioUnico());
+    tokenA = registroA.body.token;
+    usuarioIdA = registroA.body.usuario.id;
 
-    const loginB = await request(app).post("/auth/login").send(usuarioUnico());
-    tokenB = loginB.body.token;
-    usuarioIdB = loginB.body.usuario.id;
+    const registroB = await request(app).post("/auth/registrar").send(usuarioUnico());
+    tokenB = registroB.body.token;
+    usuarioIdB = registroB.body.usuario.id;
 
     const tema = temaUnico();
     await prisma.tema.create({ data: tema });

@@ -6,13 +6,24 @@ import { temaUnico, usuarioUnico } from "./test/helpers";
 describe("recurso /requisitos", () => {
   let token: string;
   let usuarioId: number;
+  let adminToken: string;
+  let adminUsuarioId: number;
   let temaId: string;
   const requisitosCriados: string[] = [];
 
   beforeAll(async () => {
-    const login = await request(app).post("/auth/login").send(usuarioUnico());
-    token = login.body.token;
-    usuarioId = login.body.usuario.id;
+    const registro = await request(app).post("/auth/registrar").send(usuarioUnico());
+    token = registro.body.token;
+    usuarioId = registro.body.usuario.id;
+
+    const dadosAdmin = usuarioUnico();
+    const registroAdmin = await request(app).post("/auth/registrar").send(dadosAdmin);
+    adminUsuarioId = registroAdmin.body.usuario.id;
+    await prisma.usuario.update({ where: { id: adminUsuarioId }, data: { role: "ADM" } });
+    const loginAdmin = await request(app)
+      .post("/auth/login")
+      .send({ email: dadosAdmin.email, senha: dadosAdmin.senha });
+    adminToken = loginAdmin.body.token;
 
     const tema = temaUnico();
     await prisma.tema.create({ data: tema });
@@ -35,7 +46,7 @@ describe("recurso /requisitos", () => {
   afterAll(async () => {
     await prisma.requisito.deleteMany({ where: { temaId } });
     await prisma.tema.delete({ where: { id: temaId } });
-    await prisma.usuario.delete({ where: { id: usuarioId } });
+    await prisma.usuario.deleteMany({ where: { id: { in: [usuarioId, adminUsuarioId] } } });
     await prisma.$disconnect();
   });
 
@@ -62,10 +73,19 @@ describe("recurso /requisitos", () => {
     expect(porTexto.body[0].tipo).toBe("nao-funcional");
   });
 
-  it("POST /requisitos com temaId inexistente retorna 400", async () => {
+  it("POST /requisitos com token de usuario comum (nao ADM) retorna 403", async () => {
     const response = await request(app)
       .post("/requisitos")
       .set("Authorization", `Bearer ${token}`)
+      .send({ temaId, texto: "x", tipo: "funcional" });
+
+    expect(response.status).toBe(403);
+  });
+
+  it("POST /requisitos com temaId inexistente retorna 400", async () => {
+    const response = await request(app)
+      .post("/requisitos")
+      .set("Authorization", `Bearer ${adminToken}`)
       .send({ temaId: "nao-existe", texto: "x", tipo: "funcional" });
 
     expect(response.status).toBe(400);
@@ -74,7 +94,7 @@ describe("recurso /requisitos", () => {
   it("POST /requisitos cria e devolve tipo wire correto", async () => {
     const response = await request(app)
       .post("/requisitos")
-      .set("Authorization", `Bearer ${token}`)
+      .set("Authorization", `Bearer ${adminToken}`)
       .send({ temaId, texto: "Novo requisito", tipo: "nao-funcional" });
 
     expect(response.status).toBe(201);

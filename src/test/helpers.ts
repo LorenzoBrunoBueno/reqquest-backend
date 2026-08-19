@@ -13,6 +13,7 @@ export function usuarioUnico() {
     nome: `Teste ${sufixo}`,
     telefone: sufixo.slice(0, 20),
     email: `teste-${sufixo}@exemplo.com`,
+    senha: "Senha123!",
   };
 }
 

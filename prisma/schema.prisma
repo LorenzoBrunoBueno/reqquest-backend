@@ -22,20 +22,35 @@ enum TipoRequisito {
   NAO_FUNCIONAL @map("nao-funcional")
 }
 
+// PROPOSTA (ainda nao sincronizada com quem administra o banco de producao):
+// papel simples do usuario, usado so para liberar/bloquear o CRUD de
+// temas/requisitos (ver requireAdmin em auth.middleware.ts). Deliberadamente
+// nao se chama "cargo" para nao colidir com o ranking de XP do frontend
+// (Estagiario -> Mestre dos Requisitos), que e um conceito totalmente
+// diferente e nao tem relacao com permissoes.
+enum Role {
+  JOGADOR
+  ADM
+}
+
 model Usuario {
   id           Int      @id @default(autoincrement())
   nome         String   @db.VarChar(150)
   telefone     String   @db.VarChar(20)
-  email        String   @db.VarChar(150)
+  // PROPOSTA: email passa a ser a chave de acesso (login = email + senha),
+  // por isso virou unico sozinho — antes a "identidade" era a tripla
+  // nome+telefone+email (ver comentario antigo removido, RF01).
+  email        String   @unique @db.VarChar(150)
+  // PROPOSTA: hash bcrypt da senha (nunca armazenar/serializar em texto puro).
+  senhaHash    String   @map("senha_hash") @db.VarChar(255)
+  // PROPOSTA: default JOGADOR; promovido manualmente para ADM via seed/DB.
+  role         Role     @default(JOGADOR)
   dataCadastro DateTime @default(now()) @map("data_cadastro")
 
   partidas  Partida[]
   progresso ProgressoJogador?
   badges    BadgeDesbloqueado[]
 
-  // RF01: "mesma pessoa" = nome + telefone + email identicos (ver auth.service.ts).
-  @@unique([nome, telefone, email], name: "uq_usuarios_identidade")
-  @@index([email], name: "idx_usuarios_email")
   @@map("usuarios")
 }
 

@@ -20,22 +20,25 @@ USE requisitos_game;
 
 -- -----------------------------------------------------
 -- Tabela: usuarios
--- RF01/RF02 - Login sem senha (nome, telefone, e-mail)
--- Espelha Auth.login(nome, telefone, email)
+-- PROPOSTA (ainda não sincronizada com quem administra o banco de
+-- produção): login passa a exigir senha. email vira a chave de acesso
+-- (login = email + senha), por isso agora é único sozinho — antes a
+-- "identidade" era a tripla nome+telefone+email (login sem senha, RF01/RF02).
+-- Espelha auth.service.ts (registrar/login) e a migration
+-- `add_senha_e_role` de prisma/schema.prisma.
 -- -----------------------------------------------------
 CREATE TABLE usuarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
     telefone VARCHAR(20) NOT NULL,
-    email VARCHAR(150) NOT NULL,
-    data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP,
-    -- O front trata "mesma pessoa" como nome + telefone + email idênticos
-    -- (main.js, checagem de `mesmaPessoa` antes do login). Um UNIQUE só em
-    -- email era mais restritivo que essa regra (bloquearia duas pessoas
-    -- diferentes num mesmo e-mail de exemplo em sala de aula); a identidade
-    -- única passa a ser a combinação dos três campos.
-    UNIQUE KEY uq_usuarios_identidade (nome, telefone, email),
-    KEY idx_usuarios_email (email)
+    email VARCHAR(150) NOT NULL UNIQUE,
+    senha_hash VARCHAR(255) NOT NULL,    -- hash bcrypt; nunca guardar/expor a senha em texto puro
+    -- Papel simples pra liberar/bloquear o CRUD de temas/requisitos
+    -- (requireAdmin em auth.middleware.ts). Deliberadamente não se chama
+    -- "cargo": esse nome já é usado pro ranking de XP do front
+    -- (Estagiário -> Mestre dos Requisitos), que não tem relação com isso.
+    role ENUM('JOGADOR', 'ADM') NOT NULL DEFAULT 'JOGADOR',
+    data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- -----------------------------------------------------
@@ -260,8 +263,11 @@ INSERT INTO requisitos (id, tema_id, texto, tipo) VALUES
 ('r-det-nf7', 't-detetives', 'O sistema deve funcionar mesmo em locais sem sinal de internet.', 'nao-funcional'),
 ('r-det-nf8', 't-detetives', 'O sistema deve gerar backups automáticos a cada 24 horas.', 'nao-funcional');
 
--- Usuário de teste (opcional, útil para testar a API)
-INSERT INTO usuarios (nome, telefone, email) VALUES
-('Usuário Teste', '(47) 99999-9999', 'teste@email.com');
+-- Usuários de teste (opcional, úteis para testar a API).
+-- Senha de dev de ambos: "Senha123!" (hash bcrypt abaixo, gerado com
+-- bcryptjs/prisma/seed.ts — nunca usar em produção).
+INSERT INTO usuarios (nome, telefone, email, senha_hash, role) VALUES
+('Usuário Teste', '(47) 99999-9999', 'teste@email.com', '$2b$10$3j6kh/lUuwhpk16tB0jxh.jGOVykU4dS5hlyj5G.amNvJo8o/CoXC', 'ADM'),
+('Jogador Teste', '(47) 98888-8888', 'jogador@email.com', '$2b$10$3j6kh/lUuwhpk16tB0jxh.jGOVykU4dS5hlyj5G.amNvJo8o/CoXC', 'JOGADOR');
 
-INSERT INTO progresso_jogador (usuario_id, xp) VALUES (1, 0);
+INSERT INTO progresso_jogador (usuario_id, xp) VALUES (1, 0), (2, 0);

@@ -9,9 +9,9 @@ describe("recurso /partidas", () => {
   let temaId: string;
 
   beforeAll(async () => {
-    const login = await request(app).post("/auth/login").send(usuarioUnico());
-    token = login.body.token;
-    usuarioId = login.body.usuario.id;
+    const registro = await request(app).post("/auth/registrar").send(usuarioUnico());
+    token = registro.body.token;
+    usuarioId = registro.body.usuario.id;
 
     const tema = temaUnico();
     await prisma.tema.create({ data: tema });

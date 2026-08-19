@@ -4,7 +4,7 @@ import type { ListarPartidasDoUsuarioQuery } from "../schemas/usuario.schema";
 export function obterUsuario(usuarioId: number) {
   return prisma.usuario.findUnique({
     where: { id: usuarioId },
-    select: { id: true, nome: true, telefone: true, email: true },
+    select: { id: true, nome: true, telefone: true, email: true, role: true },
   });
 }
 

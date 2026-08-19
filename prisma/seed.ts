@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -5,6 +6,9 @@ const prisma = new PrismaClient();
 // Dados ficticios usados so para desenvolvimento local (ver docker-compose.yml).
 // Espelham fielmente backend/src/config/script_banc2.sql (mesmos ids e textos)
 // para os dois arquivos nao ficarem divergentes.
+
+// Senha de dev dos usuarios de seed abaixo — nao usar em producao.
+const SENHA_SEED = "Senha123!";
 
 const temas = [
   {
@@ -240,30 +244,49 @@ async function main() {
     }
   }
 
-  const usuarioTeste = await prisma.usuario.upsert({
-    where: {
-      uq_usuarios_identidade: {
-        nome: "Usuário Teste",
-        telefone: "(47) 99999-9999",
-        email: "teste@email.com",
-      },
-    },
+  const senhaHashSeed = await bcrypt.hash(SENHA_SEED, 10);
+
+  // Usuario ADM de teste — unico papel capaz de fazer CRUD de temas/requisitos.
+  const usuarioAdmin = await prisma.usuario.upsert({
+    where: { email: "teste@email.com" },
     create: {
       nome: "Usuário Teste",
       telefone: "(47) 99999-9999",
       email: "teste@email.com",
+      senhaHash: senhaHashSeed,
+      role: "ADM",
     },
-    update: {},
+    update: { role: "ADM", senhaHash: senhaHashSeed },
   });
 
   await prisma.progressoJogador.upsert({
-    where: { usuarioId: usuarioTeste.id },
-    create: { usuarioId: usuarioTeste.id, xp: 0 },
+    where: { usuarioId: usuarioAdmin.id },
+    create: { usuarioId: usuarioAdmin.id, xp: 0 },
+    update: {},
+  });
+
+  // Usuario JOGADOR comum de teste — util pra validar que o CRUD de
+  // temas/requisitos fica bloqueado (403) pra quem nao e ADM.
+  const usuarioJogador = await prisma.usuario.upsert({
+    where: { email: "jogador@email.com" },
+    create: {
+      nome: "Jogador Teste",
+      telefone: "(47) 98888-8888",
+      email: "jogador@email.com",
+      senhaHash: senhaHashSeed,
+      role: "JOGADOR",
+    },
+    update: { senhaHash: senhaHashSeed },
+  });
+
+  await prisma.progressoJogador.upsert({
+    where: { usuarioId: usuarioJogador.id },
+    create: { usuarioId: usuarioJogador.id, xp: 0 },
     update: {},
   });
 
   console.log(
-    `Seed concluido: ${temas.length} temas, ${totalRequisitos} requisitos e 1 usuario de teste.`
+    `Seed concluido: ${temas.length} temas, ${totalRequisitos} requisitos e 2 usuarios de teste (senha "${SENHA_SEED}").`
   );
 }
 

@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import type { Role } from "@prisma/client";
 import { verifyToken } from "../lib/jwt";
 
 declare global {
@@ -6,6 +7,7 @@ declare global {
   namespace Express {
     interface Request {
       usuarioId?: number;
+      usuarioRole?: Role;
     }
   }
 }
@@ -28,7 +30,9 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   }
 
   try {
-    req.usuarioId = verifyToken(token).usuarioId;
+    const payload = verifyToken(token);
+    req.usuarioId = payload.usuarioId;
+    req.usuarioRole = payload.role;
     return next();
   } catch {
     return res.status(401).json({ erro: "Token invalido ou expirado" });
@@ -48,9 +52,21 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
   }
 
   try {
-    req.usuarioId = verifyToken(token).usuarioId;
+    const payload = verifyToken(token);
+    req.usuarioId = payload.usuarioId;
+    req.usuarioRole = payload.role;
     return next();
   } catch {
     return res.status(401).json({ erro: "Token invalido ou expirado" });
   }
+}
+
+// So libera pra quem tem role ADM. Sempre usado depois de requireAuth (que
+// popula req.usuarioRole) — CRUD de temas/requisitos, unico recurso com
+// controle de acesso por papel neste projeto.
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  if (req.usuarioRole !== "ADM") {
+    return res.status(403).json({ erro: "Acesso restrito a administradores" });
+  }
+  return next();
 }

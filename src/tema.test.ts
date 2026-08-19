@@ -6,17 +6,28 @@ import { usuarioUnico } from "./test/helpers";
 describe("recurso /temas", () => {
   let token: string;
   let usuarioId: number;
+  let adminToken: string;
+  let adminUsuarioId: number;
   const temasCriados: string[] = [];
 
   beforeAll(async () => {
-    const login = await request(app).post("/auth/login").send(usuarioUnico());
-    token = login.body.token;
-    usuarioId = login.body.usuario.id;
+    const registro = await request(app).post("/auth/registrar").send(usuarioUnico());
+    token = registro.body.token;
+    usuarioId = registro.body.usuario.id;
+
+    const dadosAdmin = usuarioUnico();
+    const registroAdmin = await request(app).post("/auth/registrar").send(dadosAdmin);
+    adminUsuarioId = registroAdmin.body.usuario.id;
+    await prisma.usuario.update({ where: { id: adminUsuarioId }, data: { role: "ADM" } });
+    const loginAdmin = await request(app)
+      .post("/auth/login")
+      .send({ email: dadosAdmin.email, senha: dadosAdmin.senha });
+    adminToken = loginAdmin.body.token;
   });
 
   afterAll(async () => {
     await prisma.tema.deleteMany({ where: { id: { in: temasCriados } } });
-    await prisma.usuario.delete({ where: { id: usuarioId } });
+    await prisma.usuario.deleteMany({ where: { id: { in: [usuarioId, adminUsuarioId] } } });
     await prisma.$disconnect();
   });
 
@@ -33,10 +44,18 @@ describe("recurso /temas", () => {
     expect(response.status).toBe(401);
   });
 
-  it("POST /temas com token cria o mundo", async () => {
+  it("POST /temas com token de usuario comum (nao ADM) retorna 403", async () => {
     const response = await request(app)
       .post("/temas")
       .set("Authorization", `Bearer ${token}`)
+      .send({ nome: "Mundo sem permissao" });
+    expect(response.status).toBe(403);
+  });
+
+  it("POST /temas com token de ADM cria o mundo", async () => {
+    const response = await request(app)
+      .post("/temas")
+      .set("Authorization", `Bearer ${adminToken}`)
       .send({ nome: "Mundo de Teste" });
 
     expect(response.status).toBe(201);
@@ -47,7 +66,7 @@ describe("recurso /temas", () => {
   it("DELETE /temas/:id cascateia para os requisitos do mundo", async () => {
     const tema = await request(app)
       .post("/temas")
-      .set("Authorization", `Bearer ${token}`)
+      .set("Authorization", `Bearer ${adminToken}`)
       .send({ nome: "Mundo pra excluir" });
     temasCriados.push(tema.body.id);
 
@@ -57,17 +76,30 @@ describe("recurso /temas", () => {
 
     const delecao = await request(app)
       .delete(`/temas/${tema.body.id}`)
-      .set("Authorization", `Bearer ${token}`);
+      .set("Authorization", `Bearer ${adminToken}`);
     expect(delecao.status).toBe(204);
 
     const requisitoAinda = await prisma.requisito.findUnique({ where: { id: requisito.id } });
     expect(requisitoAinda).toBeNull();
   });
 
+  it("DELETE /temas/:id de usuario comum (nao ADM) retorna 403", async () => {
+    const tema = await request(app)
+      .post("/temas")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ nome: "Mundo protegido de exclusao" });
+    temasCriados.push(tema.body.id);
+
+    const response = await request(app)
+      .delete(`/temas/${tema.body.id}`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(response.status).toBe(403);
+  });
+
   it("DELETE /temas/:id inexistente retorna 404", async () => {
     const response = await request(app)
       .delete("/temas/nao-existe")
-      .set("Authorization", `Bearer ${token}`);
+      .set("Authorization", `Bearer ${adminToken}`);
     expect(response.status).toBe(404);
   });
 
@@ -81,7 +113,7 @@ describe("recurso /temas", () => {
     it("POST /temas com iconeArquivo cria o mundo e serve a imagem em /temas/:id/icone", async () => {
       const criacao = await request(app)
         .post("/temas")
-        .set("Authorization", `Bearer ${token}`)
+        .set("Authorization", `Bearer ${adminToken}`)
         .field("nome", "Mundo com icone")
         .attach("iconeArquivo", pngMinimo, "icone.png");
       expect(criacao.status).toBe(201);
@@ -98,7 +130,7 @@ describe("recurso /temas", () => {
     it("POST /temas com fundoArquivo serve a imagem em /temas/:id/fundo", async () => {
       const criacao = await request(app)
         .post("/temas")
-        .set("Authorization", `Bearer ${token}`)
+        .set("Authorization", `Bearer ${adminToken}`)
         .field("nome", "Mundo com fundo")
         .attach("fundoArquivo", pngMinimo, "fundo.png");
       expect(criacao.status).toBe(201);
@@ -121,7 +153,7 @@ describe("recurso /temas", () => {
       const arquivoGrande = Buffer.alloc(2 * 1024 * 1024 + 1);
       const response = await request(app)
         .post("/temas")
-        .set("Authorization", `Bearer ${token}`)
+        .set("Authorization", `Bearer ${adminToken}`)
         .field("nome", "Mundo com arquivo grande")
         .attach("iconeArquivo", arquivoGrande, { filename: "icone.png", contentType: "image/png" });
       expect(response.status).toBe(400);
@@ -131,7 +163,7 @@ describe("recurso /temas", () => {
     it("POST /temas com tipo de arquivo nao suportado retorna 400", async () => {
       const response = await request(app)
         .post("/temas")
-        .set("Authorization", `Bearer ${token}`)
+        .set("Authorization", `Bearer ${adminToken}`)
         .field("nome", "Mundo com arquivo invalido")
         .attach("iconeArquivo", Buffer.from("nao e uma imagem"), { filename: "arquivo.txt", contentType: "text/plain" });
       expect(response.status).toBe(400);
@@ -140,14 +172,14 @@ describe("recurso /temas", () => {
     it("PUT /temas/:id sem novo arquivo mantem a imagem existente", async () => {
       const criacao = await request(app)
         .post("/temas")
-        .set("Authorization", `Bearer ${token}`)
+        .set("Authorization", `Bearer ${adminToken}`)
         .field("nome", "Mundo pra editar sem trocar imagem")
         .attach("iconeArquivo", pngMinimo, "icone.png");
       temasCriados.push(criacao.body.id);
 
       const edicao = await request(app)
         .put(`/temas/${criacao.body.id}`)
-        .set("Authorization", `Bearer ${token}`)
+        .set("Authorization", `Bearer ${adminToken}`)
         .field("descricao", "Descricao atualizada");
       expect(edicao.status).toBe(200);
       // Compara so o caminho (nao o host:porta) — cada `request(app)` do
@@ -158,14 +190,14 @@ describe("recurso /temas", () => {
     it("PUT /temas/:id com removerIcone=true reverte a imagem e o endpoint de streaming passa a 404", async () => {
       const criacao = await request(app)
         .post("/temas")
-        .set("Authorization", `Bearer ${token}`)
+        .set("Authorization", `Bearer ${adminToken}`)
         .field("nome", "Mundo pra remover imagem")
         .attach("iconeArquivo", pngMinimo, "icone.png");
       temasCriados.push(criacao.body.id);
 
       const edicao = await request(app)
         .put(`/temas/${criacao.body.id}`)
-        .set("Authorization", `Bearer ${token}`)
+        .set("Authorization", `Bearer ${adminToken}`)
         .field("removerIcone", "true");
       expect(edicao.status).toBe(200);
       expect(edicao.body.icone).toBeFalsy();
